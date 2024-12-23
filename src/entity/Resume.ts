@@ -1,4 +1,4 @@
-import {Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import {Company} from "./Company";
 import {User} from "./User";
 
@@ -13,10 +13,11 @@ export class Resume {
     @Column('text')
     description: string
 
-    @ManyToOne(type => User, (user: User) => user.resumes, {onDelete: 'RESTRICT'})
+    @ManyToOne(type => User, (user: User) => user.resumes)
     @JoinColumn({name: 'userId'})
     user: User
 
-    @ManyToMany(type => Company, (company: Company) => company.receivedResumes, {onDelete: "RESTRICT"})
+    @ManyToMany(type => Company, (company: Company) => company.receivedResumes)
+    @JoinTable()
     submittedResumes: Company[]
 }

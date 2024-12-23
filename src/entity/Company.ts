@@ -1,4 +1,4 @@
-import {Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import {User} from "./User";
 import {Vacancy} from "./Vacancy";
 import {Resume} from "./Resume";
@@ -23,6 +23,7 @@ export class Company {
     @OneToMany(type => User, (User) => User.manager)
     managers: User[]
 
-    @ManyToMany(type => Resume, (resume) => resume.submittedResumes, {onDelete: "RESTRICT"})
+    @ManyToMany(type => Resume, (resume) => resume.submittedResumes)
+    @JoinTable()
     receivedResumes: Resume[]
 }

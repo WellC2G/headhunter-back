@@ -14,10 +14,17 @@ export class CompanyController {
 
             const newCompany: Company = companyRepository.create(companyData);
 
-            const user = await userRepository.findOneBy({id: userId});
+            const user = await userRepository.findOne({
+            where:{id: userId},
+            relations: ['resumes']});
 
             if (!user) {
                 res.status(404).json({message: 'Пользователь не найден'});
+                return;
+            }
+
+            if (user.resumes && user.resumes.length > 0) {
+                res.status(403).json({message: 'Удалите резюме перед созданием компании'});
                 return;
             }
 

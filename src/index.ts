@@ -26,10 +26,7 @@ AppDataSource.initialize().then(() => {
     app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
     app.use('/company', companyRoute)
     app.use('/vacancy', vacancyRoute)
-    /*
     app.use('/resume', resumeRoute)
-
-     */
 
     const port = process.env.PORT || 3000;
     app.listen(port, () => {

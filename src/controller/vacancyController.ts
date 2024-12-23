@@ -1,8 +1,9 @@
-import { Request, Response } from 'express';
+import {Request, Response} from 'express';
 import { AppDataSource} from "../data-source";
 import { Vacancy} from "../entity/Vacancy";
-import {role, User} from "../entity/User";
+import { User} from "../entity/User";
 import {Company} from "../entity/Company";
+import {ILike} from "typeorm";
 
 export class VacancyController {
     async createVacancy(req: Request, res: Response) {
@@ -42,7 +43,6 @@ export class VacancyController {
             const newVacancy = vacancyRepository.create(vacancyData);
 
             newVacancy.company = company;
-            JSON.stringify(newVacancy.description);
 
             await vacancyRepository.save(newVacancy);
 
@@ -87,8 +87,6 @@ export class VacancyController {
                 return;
             }
 
-            JSON.stringify(updateData.description)
-
             Object.assign(vacancy, updateData);
             await vacancyRepository.save(vacancy);
 
@@ -128,9 +126,30 @@ export class VacancyController {
                 return;
             }
 
-            delete vacancy.company;
+            res.status(200).json(vacancy);
+            return;
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Ошибка при получении вакансии' });
+            return;
+        }
+    }
 
-            JSON.parse(vacancy.description);
+    async getVacancyByIdNotAuth(req: Request, res: Response) {
+        const vacancyId = parseInt(req.params.vacancyId);
+
+        try {
+            const vacancyRepository = AppDataSource.getRepository(Vacancy);
+
+            const vacancy = await vacancyRepository.findOne({
+                where: {id: vacancyId},
+                relations: ['company']
+            });
+
+            if (!vacancy) {
+                res.status(404).json({ message: 'Вакансия не найдена' });
+                return;
+            }
 
             res.status(200).json(vacancy);
             return;
@@ -170,6 +189,31 @@ export class VacancyController {
 
             res.status(200).json(company.vacancies);
             return;
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Ошибка при получении вакансий' });
+            return;
+        }
+    }
+
+    async searchVacancies(req: Request, res: Response) {
+        const title = req.query.title as string;
+
+        try {
+            const vacancyRepository = AppDataSource.getRepository(Vacancy);
+            let vacancies;
+
+            if (title) {
+                vacancies = await vacancyRepository.find({
+                    where: {title: ILike(`%${title}%`)},
+                    relations: ['company']
+                })
+            } else {
+                vacancies = await vacancyRepository.find()
+            }
+
+            res.status(200).json(vacancies);
+
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: 'Ошибка при получении вакансий' });
