@@ -1,6 +1,6 @@
 import {Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
-import {Company} from "./Company";
 import {User} from "./User";
+import {Vacancy} from "./Vacancy";
 
 @Entity()
 export class Resume {
@@ -17,7 +17,6 @@ export class Resume {
     @JoinColumn({name: 'userId'})
     user: User
 
-    @ManyToMany(type => Company, (company: Company) => company.receivedResumes)
-    @JoinTable()
-    submittedResumes: Company[]
+    @ManyToMany(type => Vacancy, (vacancy: Vacancy) => vacancy.receivedResumes)
+    submittedResumes: Vacancy[]
 }

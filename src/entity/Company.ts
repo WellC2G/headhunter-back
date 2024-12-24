@@ -22,8 +22,4 @@ export class Company {
 
     @OneToMany(type => User, (User) => User.manager)
     managers: User[]
-
-    @ManyToMany(type => Resume, (resume) => resume.submittedResumes)
-    @JoinTable()
-    receivedResumes: Resume[]
 }

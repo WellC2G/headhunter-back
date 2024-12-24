@@ -1,4 +1,4 @@
-import express from "express";
+import express, {response} from "express";
 import { AppDataSource } from "./data-source"
 import authRoute from "./router/authRoute";
 import editUserRoute from "./router/editUserRoute";
@@ -8,6 +8,7 @@ import vacancyRoute from "./router/vacancyRoute";
 import cors from "cors";
 import path from "path";
 import checkAuthRote from "./router/checkAuthRote";
+import responseToVacancyRoute from "./router/responseToVacancyRoute";
 
 const app = express();
 app.use(express.json());
@@ -27,6 +28,7 @@ AppDataSource.initialize().then(() => {
     app.use('/company', companyRoute)
     app.use('/vacancy', vacancyRoute)
     app.use('/resume', resumeRoute)
+    app.use('/response-to-vacancy', responseToVacancyRoute)
 
     const port = process.env.PORT || 3000;
     app.listen(port, () => {

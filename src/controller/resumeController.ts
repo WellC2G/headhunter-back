@@ -55,7 +55,7 @@ export class ResumeController {
             });
 
             if (!resume) {
-                res.status(404).json({ message: 'резюме не найдена' });
+                res.status(404).json({ message: 'Резюме не найдена' });
                 return;
             }
 
@@ -100,13 +100,10 @@ export class ResumeController {
                 return;
             }
 
-            const user = await userRepository.findOne({
-                where: {id: userId},
-                relations: ['resumes']
-            });
+            const user = await userRepository.findOneBy({id: userId});
 
-            if ((!user || (user.id !== resume.user.id) && ['applicant'].includes(user.role))) {
-                res.status(403).json({ message: 'Нет доступа к редактированию этого резюме' });
+            if ((!user || ['applicant'].includes(user.role))) {
+                res.status(403).json({ message: 'Нет доступа к просмотру этого резюме' });
                 return;
             }
 
@@ -156,7 +153,7 @@ export class ResumeController {
             });
 
             if (!user || ['manager', 'generalManager'].includes(user.role)) {
-                res.status(403).json({ message: 'Нет доступа к редактированию резюме' });
+                res.status(403).json({ message: 'Нет доступа к просмотру резюме' });
                 return;
             }
 
@@ -168,6 +165,7 @@ export class ResumeController {
             return;
         }
     }
+
 
     async deleteResume(req: Request, res: Response) {
         const userId = (req as any).user.id;

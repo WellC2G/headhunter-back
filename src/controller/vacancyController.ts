@@ -4,6 +4,7 @@ import { Vacancy} from "../entity/Vacancy";
 import { User} from "../entity/User";
 import {Company} from "../entity/Company";
 import {ILike} from "typeorm";
+import {Resume} from "../entity/Resume";
 
 export class VacancyController {
     async createVacancy(req: Request, res: Response) {
@@ -196,6 +197,43 @@ export class VacancyController {
         }
     }
 
+    async getVacanciesAndResumesById(req: Request, res: Response) {
+        const companyId = parseInt(req.params.companyId);
+        const userId = (req as any).user.id;
+
+        try {
+            const companyRepository = AppDataSource.getRepository(Company);
+            const userRepository = AppDataSource.getRepository(User);
+
+            const company = await companyRepository.findOne({
+                where: {id: companyId},
+                relations: ['vacancies', 'vacancies.receivedResumes']
+            });
+
+            if (!company) {
+                res.status(404).json({ message: 'Компания не найдена' });
+                return;
+            }
+
+            const user = await userRepository.findOne({
+                where: {id: userId},
+                relations: ['manager']
+            });
+
+            if ((!user || (user.manager.id !== company.id) && ['manager', 'generalManager'].includes(user.role))) {
+                res.status(403).json({ message: 'Нет доступа к редактированию этой вакансии' });
+                return;
+            }
+
+            res.status(200).json(company.vacancies);
+            return;
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Ошибка при получении вакансий' });
+            return;
+        }
+    }
+
     async searchVacancies(req: Request, res: Response) {
         const title = req.query.title as string;
 
@@ -214,6 +252,31 @@ export class VacancyController {
 
             res.status(200).json(vacancies);
 
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Ошибка при получении вакансий' });
+            return;
+        }
+    }
+
+    async getUserVacancies(req: Request, res: Response) {
+        const userId = (req as any).user.id;
+
+        try {
+            const userRepository = AppDataSource.getRepository(User);
+
+            const user = await userRepository.findOne({
+                where: {id: userId},
+                relations: ['appliedVacancies']
+            });
+
+            if (!user) {
+                res.status(404).json({ message: 'Пользователь не найден' });
+                return;
+            }
+
+            res.status(200).json(user.appliedVacancies);
+            return;
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: 'Ошибка при получении вакансий' });
@@ -250,6 +313,7 @@ export class VacancyController {
             }
 
             vacancyToDelete.applicants = [];
+            vacancyToDelete.receivedResumes = [];
             vacancyToDelete.company = null;
             await vacancyRepository.save(vacancyToDelete);
 
