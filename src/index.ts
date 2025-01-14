@@ -1,4 +1,4 @@
-import express, {response} from "express";
+import express from "express";
 import { AppDataSource } from "./data-source"
 import authRoute from "./router/authRoute";
 import editUserRoute from "./router/editUserRoute";
@@ -9,14 +9,31 @@ import cors from "cors";
 import path from "path";
 import checkAuthRote from "./router/checkAuthRote";
 import responseToVacancyRoute from "./router/responseToVacancyRoute";
+import chatRoute from "./router/chatRoute";
+import {createServer} from "node:http";
+import {Server} from "socket.io";
+import * as http from "node:http";
+import testRoute from "./router/testRoute";
 
 const app = express();
-app.use(express.json());
-
 app.use(cors({
     origin: 'http://localhost:5000',
     methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
+
+const httpServer = http.createServer();
+
+httpServer.on('request', app);
+
+export const ioSocket = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST"]
+    }
+});
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 AppDataSource.initialize().then(() => {
     console.log("AppDataSource initialized");
@@ -29,6 +46,9 @@ AppDataSource.initialize().then(() => {
     app.use('/vacancy', vacancyRoute)
     app.use('/resume', resumeRoute)
     app.use('/response-to-vacancy', responseToVacancyRoute)
+    app.use('/chat', chatRoute)
+
+    app.use('/test', testRoute);
 
     const port = process.env.PORT || 3000;
     app.listen(port, () => {

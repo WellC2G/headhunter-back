@@ -4,6 +4,9 @@ import { User } from "./entity/User"
 import {Company} from "./entity/Company";
 import {Vacancy} from "./entity/Vacancy";
 import {Resume} from "./entity/Resume";
+import {ChatMember} from "./entity/chat-member";
+import {Chat} from "./entity/chat";
+import {ChatMessage} from "./entity/chat-message";
 
 export const AppDataSource = new DataSource({
     type: "postgres",
@@ -14,7 +17,7 @@ export const AppDataSource = new DataSource({
     database: "headhunter",
     synchronize: true,
     logging: false,
-    entities: [User, Company, Vacancy, Resume],
+    entities: [User, Company, Vacancy, Resume, ChatMember, Chat, ChatMessage],
     migrations: [],
     subscribers: [],
 })

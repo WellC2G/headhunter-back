@@ -1,3 +1,4 @@
+/*
 import express from 'express';
 import {createServer} from 'http';
 import {Server} from "socket.io";
@@ -56,4 +57,4 @@ AppDataSource.initialize()
         console.log('Сервер Socket.IO запущен на порту 3001')});
     }).catch((err) => {
         console.error("Error during Data Source initialization:", err);
-    });
+    });*/

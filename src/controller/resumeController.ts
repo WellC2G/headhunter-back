@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import { AppDataSource} from "../data-source";
 import { Resume} from "../entity/Resume";
 import { User} from "../entity/User";
+import {Vacancy} from "../entity/Vacancy";
 
 export class ResumeController {
     async createResume(req: Request, res: Response) {
@@ -116,16 +117,25 @@ export class ResumeController {
         }
     }
 
-    async getResumeByIdNotAuth(req: Request, res: Response) {
+    async getResumeByIdForCreator(req: Request, res: Response) {
         const resumeId = parseInt(req.params.resumeId);
+        const userId = (req as any).user.id;
 
         try {
             const resumeRepository = AppDataSource.getRepository(Resume);
+            const userRepository = AppDataSource.getRepository(User);
 
             const resume = await resumeRepository.findOne({
                 where: {id: resumeId},
                 relations: ['user']
             });
+
+            const user = await userRepository.findOne({
+                where: {id: userId},
+                relations: ['resumes']
+            });
+
+            if(!user || (['applicant'].includes(user.role)))
 
             if (!resume) {
                 res.status(404).json({ message: 'Резюме не найдена' });
@@ -149,7 +159,7 @@ export class ResumeController {
 
             const user = await userRepository.findOne({
                 where: {id: userId},
-                relations: ['resumes']
+                relations: ['resumes', 'resumes.submittedResumes', 'resumes.submittedResumes.company']
             });
 
             if (!user || ['manager', 'generalManager'].includes(user.role)) {
@@ -174,10 +184,11 @@ export class ResumeController {
         try {
             const userRepository = AppDataSource.getRepository(User);
             const resumeRepository = AppDataSource.getRepository(Resume);
+            const vacancyRepository = AppDataSource.getRepository(Vacancy);
 
             const user = await userRepository.findOne({
                 where: { id: userId },
-                relations: ['resumes']
+                relations: ['resumes', 'appliedVacancies', 'appliedVacancies.receivedResumes']
             });
 
             if (!user) {
@@ -195,11 +206,34 @@ export class ResumeController {
                 return;
             }
 
+            if (resumeToDelete.submittedResumes && resumeToDelete.submittedResumes.length > 0) {
+                for (const vacancy of resumeToDelete.submittedResumes) {
+                    const vacancyToRemoveResumeFrom = await vacancyRepository.findOne({
+                        where: { id: vacancy.id },
+                        relations: ['receivedResumes', 'applicants']
+                    });
+
+                    if (vacancyToRemoveResumeFrom) {
+                        vacancyToRemoveResumeFrom.receivedResumes = vacancyToRemoveResumeFrom.receivedResumes.filter(
+                            (resume) => resume.id !== resumeId);
+
+                        vacancyToRemoveResumeFrom.applicants = vacancyToRemoveResumeFrom.applicants.filter(
+                            (user) => user.id !== userId);
+
+                        await vacancyRepository.save(vacancyToRemoveResumeFrom);
+                    }
+                }
+            }
+
             resumeToDelete.submittedResumes = [];
             resumeToDelete.user = null;
             await resumeRepository.save(resumeToDelete);
 
             user.resumes = user.resumes.filter(resume => resume.id !== resumeId);
+            user.appliedVacancies = user.appliedVacancies.filter(
+                (vacancy) => !vacancy.receivedResumes.some((resume) => resume.id === resumeId)
+            );
+
             await userRepository.save(user);
 
             await resumeRepository.remove(resumeToDelete);

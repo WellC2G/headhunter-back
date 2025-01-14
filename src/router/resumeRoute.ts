@@ -8,7 +8,7 @@ const resumeController = new ResumeController();
 router.post('/create', authMiddleware, resumeController.createResume);
 router.put('/edit/:resumeId', authMiddleware, resumeController.updateResume);
 router.get('/:resumeId', authMiddleware, resumeController.getResumeById);
-router.get('/info/:resumeId', resumeController.getResumeByIdNotAuth);
+router.get('/info/:resumeId', authMiddleware, resumeController.getResumeByIdForCreator);
 router.get('/list/resumes', authMiddleware, resumeController.getResumes);
 router.delete('/:resumeId/delete', authMiddleware, resumeController.deleteResume);
 

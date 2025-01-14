@@ -291,6 +291,8 @@ export class VacancyController {
         try {
             const companyRepository = AppDataSource.getRepository(Company);
             const vacancyRepository = AppDataSource.getRepository(Vacancy);
+            const userRepository = AppDataSource.getRepository(User);
+            const resumeRepository = AppDataSource.getRepository(Resume);
 
             const company = await companyRepository.findOne({
                 where: { id: companyId },
@@ -311,6 +313,37 @@ export class VacancyController {
                 res.status(404).json({ message: 'Вакансия не найдена' });
                 return;
             }
+
+            if (vacancyToDelete.applicants && vacancyToDelete.applicants.length > 0) {
+                for (const user of vacancyToDelete.applicants) {
+                    const userToUpdate = await userRepository.findOne({
+                        where: { id: user.id },
+                        relations: ['appliedVacancies']
+                    });
+                    if (userToUpdate) {
+                        userToUpdate.appliedVacancies = userToUpdate.appliedVacancies.filter(
+                            (vacancy) => vacancy.id !== vacancyId
+                        );
+                        await userRepository.save(userToUpdate);
+                    }
+                }
+            }
+
+            if (vacancyToDelete.receivedResumes && vacancyToDelete.receivedResumes.length > 0) {
+                for (const resume of vacancyToDelete.receivedResumes) {
+                    const resumeToUpdate = await resumeRepository.findOne({
+                        where: { id: resume.id },
+                        relations: ['submittedResumes']
+                    });
+                    if (resumeToUpdate) {
+                        resumeToUpdate.submittedResumes = resumeToUpdate.submittedResumes.filter(
+                            (vacancy) => vacancy.id !== vacancyId
+                        );
+                        await resumeRepository.save(resumeToUpdate);
+                    }
+                }
+            }
+
 
             vacancyToDelete.applicants = [];
             vacancyToDelete.receivedResumes = [];
