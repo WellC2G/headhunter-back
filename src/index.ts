@@ -14,11 +14,11 @@ import {createServer} from "node:http";
 import {Server} from "socket.io";
 import * as http from "node:http";
 import testRoute from "./router/testRoute";
+import {authMiddleware, authSocket} from "./middleware/authMiddleware";
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:5000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    origin: '*',
 }));
 
 const httpServer = http.createServer();
@@ -27,9 +27,9 @@ httpServer.on('request', app);
 
 export const ioSocket = new Server(httpServer, {
     cors: {
-        origin: "http://localhost:3000",
-        methods: ["GET", "POST"]
-    }
+        origin: "*",
+    },
+    pingTimeout: 60000,
 });
 
 app.use(express.urlencoded({ extended: true }));
@@ -50,8 +50,24 @@ AppDataSource.initialize().then(() => {
 
     app.use('/test', testRoute);
 
+    ioSocket.on("connection", (socket) => {
+        const id = authSocket(socket);
+
+        if(!id || !id.userId) {
+            socket.disconnect();
+            return;
+        }
+
+        if (id.companyId !== undefined || null) {
+            socket.join(`company:${parseInt(id.companyId)}`);
+            return;
+        }
+
+        socket.join(`user:${id.userId}`);
+    });
+
     const port = process.env.PORT || 3000;
-    app.listen(port, () => {
+    httpServer.listen(port, () => {
         console.log(`App listening on port ${port}`);
     });
 }).catch((err) => {

@@ -207,7 +207,7 @@ export class VacancyController {
 
             const company = await companyRepository.findOne({
                 where: {id: companyId},
-                relations: ['vacancies', 'vacancies.receivedResumes']
+                relations: ['vacancies', 'vacancies.receivedResumes', 'vacancies.receivedResumes.user']
             });
 
             if (!company) {
